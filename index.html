@@ -1,0 +1,2638 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+<title>QuizBlitz</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+<style>
+*{
+    box-sizing:border-box;
+}
+
+body{
+    margin:0;
+    font-family:'Outfit',sans-serif;
+    background:#070b18;
+    color:white;
+    overflow-x:hidden;
+}
+
+button{
+    font-family:inherit;
+}
+
+.hidden-screen{
+    display:none !important;
+}
+
+.glass{
+    background:rgba(20,27,50,.78);
+    border:1px solid rgba(255,255,255,.09);
+    backdrop-filter:blur(18px);
+}
+
+.gradient-text{
+    background:linear-gradient(90deg,#7c3aed,#06b6d4,#22c55e);
+    -webkit-background-clip:text;
+    color:transparent;
+}
+
+.bg-grid{
+    position:fixed;
+    inset:0;
+    z-index:-2;
+    opacity:.18;
+    background-image:
+        linear-gradient(rgba(124,58,237,.25) 1px,transparent 1px),
+        linear-gradient(90deg,rgba(124,58,237,.25) 1px,transparent 1px);
+    background-size:45px 45px;
+}
+
+.glow{
+    position:fixed;
+    width:350px;
+    height:350px;
+    border-radius:50%;
+    filter:blur(100px);
+    opacity:.18;
+    z-index:-1;
+}
+
+.glow.one{
+    background:#7c3aed;
+    top:-100px;
+    left:-100px;
+}
+
+.glow.two{
+    background:#06b6d4;
+    bottom:-120px;
+    right:-100px;
+}
+
+.card{
+    border-radius:24px;
+    padding:20px;
+}
+
+.btn{
+    border:0;
+    cursor:pointer;
+    transition:.2s;
+}
+
+.btn:hover{
+    transform:translateY(-2px);
+}
+
+.btn:active{
+    transform:scale(.97);
+}
+
+.primary-btn{
+    background:linear-gradient(135deg,#7c3aed,#4f46e5);
+    box-shadow:0 10px 30px rgba(124,58,237,.3);
+}
+
+.primary-btn:hover{
+    box-shadow:0 15px 40px rgba(124,58,237,.5);
+}
+
+.secondary-btn{
+    background:#1b2440;
+}
+
+.nav-btn{
+    color:#9ca3af;
+    transition:.2s;
+}
+
+.nav-btn:hover,
+.nav-btn.active{
+    color:white;
+    background:#202943;
+}
+
+.avatar{
+    width:65px;
+    height:65px;
+    border-radius:20px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:linear-gradient(135deg,#252d4a,#12182b);
+    border:2px solid transparent;
+    font-size:35px;
+}
+
+.avatar.selected{
+    border-color:#8b5cf6;
+    box-shadow:0 0 25px rgba(139,92,246,.5);
+}
+
+.avatar-option{
+    cursor:pointer;
+    transition:.2s;
+}
+
+.avatar-option:hover{
+    transform:scale(1.1);
+}
+
+.progress{
+    height:9px;
+    background:#1b233b;
+    border-radius:99px;
+    overflow:hidden;
+}
+
+.progress-bar{
+    height:100%;
+    background:linear-gradient(90deg,#7c3aed,#06b6d4);
+    transition:.3s;
+}
+
+.answer{
+    width:100%;
+    text-align:left;
+    padding:18px;
+    margin-top:12px;
+    border-radius:18px;
+    background:#151d35;
+    border:2px solid transparent;
+    cursor:pointer;
+    transition:.2s;
+}
+
+.answer:hover{
+    background:#202943;
+    transform:translateX(4px);
+}
+
+.answer.correct{
+    background:rgba(34,197,94,.2);
+    border-color:#22c55e;
+}
+
+.answer.wrong{
+    background:rgba(239,68,68,.2);
+    border-color:#ef4444;
+}
+
+.answer.disabled{
+    pointer-events:none;
+}
+
+.option-letter{
+    width:38px;
+    height:38px;
+    border-radius:12px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:#252e4c;
+    margin-right:12px;
+    font-weight:800;
+}
+
+.streak-fire{
+    animation:firePulse .7s infinite alternate;
+}
+
+@keyframes firePulse{
+    from{
+        transform:scale(1);
+        filter:drop-shadow(0 0 5px #f97316);
+    }
+    to{
+        transform:scale(1.15);
+        filter:drop-shadow(0 0 25px #fb923c);
+    }
+}
+
+@keyframes pop{
+    0%{transform:scale(.5);opacity:0}
+    70%{transform:scale(1.15);opacity:1}
+    100%{transform:scale(1);opacity:1}
+}
+
+.pop{
+    animation:pop .4s ease;
+}
+
+@keyframes shake{
+    0%,100%{transform:translateX(0)}
+    20%{transform:translateX(-10px)}
+    40%{transform:translateX(10px)}
+    60%{transform:translateX(-7px)}
+    80%{transform:translateX(7px)}
+}
+
+.shake{
+    animation:shake .5s;
+}
+
+@keyframes streakGlow{
+    0%{box-shadow:0 0 0 rgba(249,115,22,0)}
+    50%{box-shadow:0 0 70px rgba(249,115,22,.8)}
+    100%{box-shadow:0 0 0 rgba(249,115,22,0)}
+}
+
+.streak-glow{
+    animation:streakGlow 1s;
+}
+
+#effectOverlay{
+    position:fixed;
+    inset:0;
+    pointer-events:none;
+    z-index:9999;
+}
+
+.streak-message{
+    position:fixed;
+    left:50%;
+    top:38%;
+    transform:translate(-50%,-50%);
+    z-index:10000;
+    pointer-events:none;
+    text-align:center;
+    animation:streakPop 1.5s forwards;
+}
+
+@keyframes streakPop{
+    0%{
+        opacity:0;
+        transform:translate(-50%,-50%) scale(.3) rotate(-8deg);
+    }
+    20%{
+        opacity:1;
+        transform:translate(-50%,-50%) scale(1.15) rotate(3deg);
+    }
+    70%{
+        opacity:1;
+        transform:translate(-50%,-50%) scale(1) rotate(0);
+    }
+    100%{
+        opacity:0;
+        transform:translate(-50%,-70%) scale(1.2);
+    }
+}
+
+.streak-number{
+    font-size:80px;
+    font-weight:900;
+    line-height:1;
+    text-shadow:0 0 35px currentColor;
+}
+
+.timer-danger{
+    color:#ef4444;
+    animation:timerPulse .5s infinite alternate;
+}
+
+@keyframes timerPulse{
+    from{transform:scale(1)}
+    to{transform:scale(1.08)}
+}
+
+.modal{
+    position:fixed;
+    inset:0;
+    z-index:5000;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:20px;
+    background:rgba(0,0,0,.7);
+    backdrop-filter:blur(10px);
+}
+
+.modal-box{
+    width:100%;
+    max-width:600px;
+    max-height:90vh;
+    overflow-y:auto;
+}
+
+select{
+    width:100%;
+    padding:14px;
+    border-radius:14px;
+    background:#151d35;
+    color:white;
+    border:1px solid #303957;
+    outline:none;
+}
+
+input{
+    background:#151d35;
+    color:white;
+    border:1px solid #303957;
+    outline:none;
+}
+
+.rank{
+    width:38px;
+    height:38px;
+    border-radius:12px;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    background:#202943;
+    font-weight:900;
+}
+
+.stat-card{
+    background:#11182d;
+    border:1px solid rgba(255,255,255,.06);
+}
+
+.shop-item{
+    transition:.2s;
+}
+
+.shop-item:hover{
+    transform:translateY(-5px);
+    border-color:#7c3aed;
+}
+
+@media(max-width:640px){
+    .card{
+        border-radius:18px;
+        padding:15px;
+    }
+
+    .streak-number{
+        font-size:60px;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<div class="bg-grid"></div>
+<div class="glow one"></div>
+<div class="glow two"></div>
+<div id="effectOverlay"></div>
+
+<!-- APP -->
+<div id="app" class="min-h-screen">
+
+<!-- HEADER -->
+<header class="sticky top-0 z-40 glass">
+    <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+
+        <button onclick="app.goHome()" class="flex items-center gap-3">
+            <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-violet-600 to-cyan-500 flex items-center justify-center text-xl font-black">
+                Q
+            </div>
+
+            <div class="text-left">
+                <div class="font-black text-lg">
+                    Quiz<span class="text-violet-400">Blitz</span>
+                </div>
+                <div class="text-xs text-gray-500">Think fast. Win big.</div>
+            </div>
+        </button>
+
+        <div class="flex items-center gap-3">
+
+            <div class="hidden sm:flex items-center gap-2 glass px-3 py-2 rounded-xl">
+                <span>🪙</span>
+                <span id="headerCoins" class="font-bold">500</span>
+            </div>
+
+            <button onclick="app.openProfile()" class="flex items-center gap-2">
+                <div id="headerAvatar" class="text-2xl">😎</div>
+                <div class="hidden sm:block text-left">
+                    <div id="headerName" class="font-bold text-sm">Player</div>
+                    <div id="headerLevel" class="text-xs text-violet-400">Level 1</div>
+                </div>
+            </button>
+
+        </div>
+    </div>
+</header>
+
+<!-- HOME -->
+<section id="homeScreen" class="max-w-6xl mx-auto px-4 py-8">
+
+    <div class="glass card mb-6 overflow-hidden">
+        <div class="grid md:grid-cols-2 gap-8 items-center">
+
+            <div>
+                <div class="inline-flex px-3 py-1 rounded-full bg-violet-500/10 border border-violet-500/20 text-violet-300 text-sm mb-4">
+                    ⚡ Fast-paced trivia
+                </div>
+
+                <h1 class="text-4xl md:text-6xl font-black leading-tight">
+                    How smart are
+                    <span class="gradient-text">you?</span>
+                </h1>
+
+                <p class="text-gray-400 mt-4 text-lg">
+                    Challenge yourself with up to 70 questions,
+                    build massive streaks and climb the leaderboard.
+                </p>
+
+                <div class="flex flex-wrap gap-3 mt-7">
+                    <button onclick="app.openQuickPlay()" class="btn primary-btn px-6 py-4 rounded-2xl font-bold">
+                        ⚡ Quick Play
+                    </button>
+
+                    <button onclick="app.openCreateRoom()" class="btn secondary-btn px-6 py-4 rounded-2xl font-bold">
+                        👥 Create Room
+                    </button>
+                </div>
+            </div>
+
+            <div class="relative">
+                <div class="glass rounded-3xl p-6">
+                    <div class="flex items-center justify-between mb-5">
+                        <span class="font-bold">🔥 Current Streak</span>
+                        <span id="homeStreak" class="text-orange-400 font-black text-2xl">0</span>
+                    </div>
+
+                    <div class="text-center py-8">
+                        <div id="homeFire" class="text-8xl">🔥</div>
+                        <div class="text-gray-400 mt-3">Keep answering correctly!</div>
+                    </div>
+
+                    <div class="grid grid-cols-3 gap-3">
+                        <div class="stat-card rounded-2xl p-4 text-center">
+                            <div id="homeGames" class="font-black text-xl">0</div>
+                            <div class="text-xs text-gray-500">Games</div>
+                        </div>
+
+                        <div class="stat-card rounded-2xl p-4 text-center">
+                            <div id="homeWins" class="font-black text-xl">0</div>
+                            <div class="text-xs text-gray-500">Wins</div>
+                        </div>
+
+                        <div class="stat-card rounded-2xl p-4 text-center">
+                            <div id="homeBest" class="font-black text-xl">0</div>
+                            <div class="text-xs text-gray-500">Best Streak</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- NAV CARDS -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+
+        <button onclick="app.openQuickPlay()" class="glass card text-left btn">
+            <div class="text-3xl mb-3">🎯</div>
+            <div class="font-bold">Play Quiz</div>
+            <div class="text-xs text-gray-500 mt-1">Choose questions</div>
+        </button>
+
+        <button onclick="app.showLeaderboard()" class="glass card text-left btn">
+            <div class="text-3xl mb-3">🏆</div>
+            <div class="font-bold">Leaderboard</div>
+            <div class="text-xs text-gray-500 mt-1">Top players</div>
+        </button>
+
+        <button onclick="app.openShop()" class="glass card text-left btn">
+            <div class="text-3xl mb-3">🛍️</div>
+            <div class="font-bold">Shop</div>
+            <div class="text-xs text-gray-500 mt-1">Spend coins</div>
+        </button>
+
+        <button onclick="app.openProfile()" class="glass card text-left btn">
+            <div class="text-3xl mb-3">👤</div>
+            <div class="font-bold">Profile</div>
+            <div class="text-xs text-gray-500 mt-1">Customize you</div>
+        </button>
+
+    </div>
+
+</section>
+
+<!-- QUIZ -->
+<section id="quizScreen" class="hidden-screen max-w-4xl mx-auto px-4 py-6">
+
+    <div class="flex items-center justify-between mb-5">
+
+        <div>
+            <div id="quizCategory" class="text-sm text-violet-400 font-bold">General</div>
+            <div id="quizProgressText" class="text-gray-400 text-sm">Question 1 of 10</div>
+        </div>
+
+        <div class="flex items-center gap-3">
+
+            <div id="streakDisplay" class="glass px-4 py-2 rounded-xl font-black text-orange-400">
+                🔥 <span id="streakValue">0</span>
+            </div>
+
+            <div id="timerDisplay" class="glass px-4 py-2 rounded-xl font-black">
+                ⏱️ <span id="timerValue">15</span>
+            </div>
+
+        </div>
+    </div>
+
+    <div class="progress mb-6">
+        <div id="quizProgress" class="progress-bar" style="width:0%"></div>
+    </div>
+
+    <div id="quizCard" class="glass card">
+
+        <div class="flex items-center justify-between mb-6">
+            <span id="difficultyBadge" class="px-3 py-1 rounded-full bg-green-500/10 text-green-400 text-xs font-bold">
+                EASY
+            </span>
+
+            <span id="pointsDisplay" class="text-yellow-400 font-black">
+                +100
+            </span>
+        </div>
+
+        <h2 id="questionText" class="text-2xl md:text-3xl font-black leading-tight mb-7">
+            Question
+        </h2>
+
+        <div id="answers"></div>
+
+    </div>
+
+</section>
+
+<!-- RESULTS -->
+<section id="resultsScreen" class="hidden-screen max-w-4xl mx-auto px-4 py-8">
+
+    <div class="glass card text-center">
+
+        <div id="resultEmoji" class="text-7xl mb-3">🏆</div>
+
+        <h1 id="resultTitle" class="text-4xl font-black">
+            Quiz Complete!
+        </h1>
+
+        <p id="resultSubtitle" class="text-gray-400 mt-2">
+            Great job!
+        </p>
+
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8">
+
+            <div class="stat-card rounded-2xl p-5">
+                <div id="resultScore" class="text-3xl font-black text-violet-400">0</div>
+                <div class="text-gray-500 text-sm">Score</div>
+            </div>
+
+            <div class="stat-card rounded-2xl p-5">
+                <div id="resultCorrect" class="text-3xl font-black text-green-400">0</div>
+                <div class="text-gray-500 text-sm">Correct</div>
+            </div>
+
+            <div class="stat-card rounded-2xl p-5">
+                <div id="resultBestStreak" class="text-3xl font-black text-orange-400">0</div>
+                <div class="text-gray-500 text-sm">Best Streak</div>
+            </div>
+
+            <div class="stat-card rounded-2xl p-5">
+                <div id="resultXP" class="text-3xl font-black text-cyan-400">+0</div>
+                <div class="text-gray-500 text-sm">XP Earned</div>
+            </div>
+
+        </div>
+
+        <div class="flex flex-wrap justify-center gap-3 mt-8">
+            <button onclick="app.openQuickPlay()" class="btn primary-btn px-6 py-3 rounded-xl font-bold">
+                🔄 Play Again
+            </button>
+
+            <button onclick="app.goHome()" class="btn secondary-btn px-6 py-3 rounded-xl font-bold">
+                🏠 Home
+            </button>
+        </div>
+
+    </div>
+
+</section>
+
+<!-- LEADERBOARD -->
+<section id="leaderboardScreen" class="hidden-screen max-w-4xl mx-auto px-4 py-8">
+
+    <div class="flex items-center justify-between mb-5">
+        <div>
+            <h1 class="text-3xl font-black">🏆 Leaderboard</h1>
+            <p class="text-gray-500">Top QuizBlitz players</p>
+        </div>
+
+        <button onclick="app.goHome()" class="btn secondary-btn px-4 py-2 rounded-xl">
+            Back
+        </button>
+    </div>
+
+    <div id="leaderboardList" class="space-y-3"></div>
+
+</section>
+
+<!-- SHOP -->
+<section id="shopScreen" class="hidden-screen max-w-5xl mx-auto px-4 py-8">
+
+    <div class="flex items-center justify-between mb-5">
+        <div>
+            <h1 class="text-3xl font-black">🛍️ Shop</h1>
+            <p class="text-gray-500">Spend your coins</p>
+        </div>
+
+        <button onclick="app.goHome()" class="btn secondary-btn px-4 py-2 rounded-xl">
+            Back
+        </button>
+    </div>
+
+    <div id="shopGrid" class="grid sm:grid-cols-2 md:grid-cols-3 gap-4"></div>
+
+</section>
+
+</div>
+
+<!-- QUICK PLAY MODAL -->
+<div id="quickPlayModal" class="modal hidden-screen">
+
+    <div class="modal-box glass card">
+
+        <div class="flex items-center justify-between mb-6">
+            <div>
+                <h2 class="text-2xl font-black">⚡ Quick Play</h2>
+                <p class="text-gray-500 text-sm">Choose your challenge</p>
+            </div>
+
+            <button onclick="app.closeModals()" class="text-gray-400 text-2xl">×</button>
+        </div>
+
+        <label class="text-sm text-gray-400">Category</label>
+
+        <select id="quickCategory" class="mt-2 mb-5">
+            <option>Mixed</option>
+            <option>Science</option>
+            <option>Gaming</option>
+            <option>Sports</option>
+            <option>Movies</option>
+            <option>Technology</option>
+            <option>General Knowledge</option>
+        </select>
+
+        <label class="text-sm text-gray-400">Number of Questions</label>
+
+        <select id="quickQuestions" class="mt-2 mb-5">
+            <option value="10">10 Questions</option>
+            <option value="20">20 Questions</option>
+            <option value="30">30 Questions</option>
+            <option value="40">40 Questions</option>
+            <option value="50">50 Questions</option>
+            <option value="60">60 Questions</option>
+            <option value="70">70 Questions</option>
+        </select>
+
+        <label class="text-sm text-gray-400">Time Per Question</label>
+
+        <select id="quickTimer" class="mt-2 mb-6">
+            <option value="10">10 seconds</option>
+            <option value="15" selected>15 seconds</option>
+            <option value="20">20 seconds</option>
+            <option value="30">30 seconds</option>
+        </select>
+
+        <div class="rounded-2xl bg-violet-500/10 border border-violet-500/20 p-4 mb-6">
+            <div class="font-bold">🔥 Progressive Difficulty</div>
+            <div class="text-sm text-gray-400 mt-1">
+                Questions start easier and become harder as you progress.
+            </div>
+        </div>
+
+        <button onclick="app.startFromQuickPlay()" class="btn primary-btn w-full py-4 rounded-xl font-black">
+            🚀 START QUIZ
+        </button>
+
+    </div>
+</div>
+
+<!-- CREATE ROOM -->
+<div id="createRoomModal" class="modal hidden-screen">
+
+    <div class="modal-box glass card">
+
+        <div class="flex items-center justify-between mb-6">
+            <div>
+                <h2 class="text-2xl font-black">👥 Create Room</h2>
+                <p class="text-gray-500 text-sm">Set up your multiplayer quiz</p>
+            </div>
+
+            <button onclick="app.closeModals()" class="text-gray-400 text-2xl">×</button>
+        </div>
+
+        <label class="text-sm text-gray-400">Room Name</label>
+
+        <input
+            id="roomName"
+            value="My Quiz Room"
+            class="w-full mt-2 mb-5 p-3 rounded-xl"
+        >
+
+        <label class="text-sm text-gray-400">Category</label>
+
+        <select id="roomCategory" class="mt-2 mb-5">
+            <option>Mixed</option>
+            <option>Science</option>
+            <option>Gaming</option>
+            <option>Sports</option>
+            <option>Movies</option>
+            <option>Technology</option>
+            <option>General Knowledge</option>
+        </select>
+
+        <label class="text-sm text-gray-400">Questions</label>
+
+        <select id="roomQuestions" class="mt-2 mb-5">
+            <option value="10">10 Questions</option>
+            <option value="20">20 Questions</option>
+            <option value="30">30 Questions</option>
+            <option value="40">40 Questions</option>
+            <option value="50">50 Questions</option>
+            <option value="60">60 Questions</option>
+            <option value="70">70 Questions</option>
+        </select>
+
+        <label class="text-sm text-gray-400">Time Per Question</label>
+
+        <select id="roomTimer" class="mt-2 mb-6">
+            <option value="10">10 seconds</option>
+            <option value="15" selected>15 seconds</option>
+            <option value="20">20 seconds</option>
+            <option value="30">30 seconds</option>
+        </select>
+
+        <button onclick="app.createRoom()" class="btn primary-btn w-full py-4 rounded-xl font-black">
+            🚀 CREATE ROOM
+        </button>
+
+    </div>
+</div>
+
+<!-- PROFILE -->
+<div id="profileModal" class="modal hidden-screen">
+
+    <div class="modal-box glass card">
+
+        <div class="flex items-center justify-between mb-6">
+            <div>
+                <h2 class="text-2xl font-black">👤 Profile</h2>
+                <p class="text-gray-500 text-sm">Customize your player</p>
+            </div>
+
+            <button onclick="app.closeModals()" class="text-gray-400 text-2xl">×</button>
+        </div>
+
+        <div class="flex justify-center mb-5">
+            <div id="profilePreview" class="text-7xl">😎</div>
+        </div>
+
+        <label class="text-sm text-gray-400">Username</label>
+
+        <input
+            id="profileName"
+            class="w-full mt-2 p-3 rounded-xl mb-6"
+        >
+
+        <label class="text-sm text-gray-400">Choose Avatar</label>
+
+        <div id="avatarGrid" class="grid grid-cols-5 sm:grid-cols-7 gap-3 mt-3 mb-6"></div>
+
+        <button onclick="app.saveProfile()" class="btn primary-btn w-full py-4 rounded-xl font-black">
+            💾 SAVE PROFILE
+        </button>
+
+    </div>
+</div>
+
+<script>
+
+const QUESTIONS = [
+
+/* ================= SCIENCE ================= */
+
+{
+category:"Science",
+difficulty:"Easy",
+q:"Which planet is known as the Red Planet?",
+a:["Mars","Venus","Jupiter","Mercury"],
+correct:0
+},
+{
+category:"Science",
+difficulty:"Easy",
+q:"What is H₂O commonly known as?",
+a:["Water","Oxygen","Hydrogen","Salt"],
+correct:0
+},
+{
+category:"Science",
+difficulty:"Medium",
+q:"How many bones does an average adult human have?",
+a:["206","201","212","196"],
+correct:0
+},
+{
+category:"Science",
+difficulty:"Medium",
+q:"Which organ pumps blood around the human body?",
+a:["Heart","Liver","Lung","Kidney"],
+correct:0
+},
+{
+category:"Science",
+difficulty:"Medium",
+q:"What force keeps objects pulled toward Earth?",
+a:["Gravity","Magnetism","Friction","Pressure"],
+correct:0
+},
+{
+category:"Science",
+difficulty:"Medium",
+q:"What is the center of an atom called?",
+a:["Nucleus","Core","Electron","Proton"],
+correct:0
+},
+{
+category:"Science",
+difficulty:"Hard",
+q:"Which gas do plants absorb during photosynthesis?",
+a:["Carbon dioxide","Oxygen","Nitrogen","Helium"],
+correct:0
+},
+{
+category:"Science",
+difficulty:"Hard",
+q:"What is the boiling point of water at sea level?",
+a:["100°C","90°C","110°C","80°C"],
+correct:0
+},
+{
+category:"Science",
+difficulty:"Hard",
+q:"What does DNA stand for?",
+a:["Deoxyribonucleic Acid","Dynamic Nuclear Acid","Dual Nitrogen Atom","Deoxygenated Nucleic Acid"],
+correct:0
+},
+{
+category:"Science",
+difficulty:"Expert",
+q:"Which particle has a negative electric charge?",
+a:["Electron","Proton","Neutron","Photon"],
+correct:0
+},
+
+/* ================= GAMING ================= */
+
+{
+category:"Gaming",
+difficulty:"Easy",
+q:"Which game features Creepers?",
+a:["Minecraft","Fortnite","Halo","Overwatch"],
+correct:0
+},
+{
+category:"Gaming",
+difficulty:"Easy",
+q:"Who is the famous Nintendo character with a red hat?",
+a:["Mario","Link","Kirby","Sonic"],
+correct:0
+},
+{
+category:"Gaming",
+difficulty:"Medium",
+q:"Which company owns Xbox?",
+a:["Microsoft","Sony","Nintendo","Valve"],
+correct:0
+},
+{
+category:"Gaming",
+difficulty:"Medium",
+q:"Which game features the character Master Chief?",
+a:["Halo","Destiny","Doom","Titanfall"],
+correct:0
+},
+{
+category:"Gaming",
+difficulty:"Medium",
+q:"What does Fortnite's last-player-standing mode commonly call the winning result?",
+a:["Victory Royale","Final Winner","Battle Champion","Last Stand"],
+correct:0
+},
+{
+category:"Gaming",
+difficulty:"Medium",
+q:"Which company created the PlayStation?",
+a:["Sony","Microsoft","Nintendo","Sega"],
+correct:0
+},
+{
+category:"Gaming",
+difficulty:"Hard",
+q:"Which game series features the character Link?",
+a:["The Legend of Zelda","Final Fantasy","Dark Souls","Kingdom Hearts"],
+correct:0
+},
+{
+category:"Gaming",
+difficulty:"Hard",
+q:"Which game features the city of Los Santos?",
+a:["Grand Theft Auto V","Watch Dogs","Cyberpunk 2077","Saints Row"],
+correct:0
+},
+{
+category:"Gaming",
+difficulty:"Hard",
+q:"Which company developed the original Doom?",
+a:["id Software","Valve","Epic Games","Bungie"],
+correct:0
+},
+{
+category:"Gaming",
+difficulty:"Expert",
+q:"Which game engine was originally developed by Valve for Half-Life 2?",
+a:["Source","Unreal Engine","Unity","CryEngine"],
+correct:0
+},
+
+/* ================= SPORTS ================= */
+
+{
+category:"Sports",
+difficulty:"Easy",
+q:"How many players does a soccer team normally have on the field?",
+a:["11","10","12","9"],
+correct:0
+},
+{
+category:"Sports",
+difficulty:"Easy",
+q:"What sport uses a shuttlecock?",
+a:["Badminton","Tennis","Squash","Volleyball"],
+correct:0
+},
+{
+category:"Sports",
+difficulty:"Medium",
+q:"How many rings are on the Olympic symbol?",
+a:["5","4","6","7"],
+correct:0
+},
+{
+category:"Sports",
+difficulty:"Medium",
+q:"Wimbledon is a famous tournament in which sport?",
+a:["Tennis","Golf","Cricket","Rugby"],
+correct:0
+},
+{
+category:"Sports",
+difficulty:"Medium",
+q:"How many players from one basketball team are on court at once?",
+a:["5","6","7","4"],
+correct:0
+},
+{
+category:"Sports",
+difficulty:"Medium",
+q:"How many points is a free throw worth in basketball?",
+a:["1","2","3","4"],
+correct:0
+},
+{
+category:"Sports",
+difficulty:"Hard",
+q:"How many balls are normally bowled in a cricket over?",
+a:["6","5","8","10"],
+correct:0
+},
+{
+category:"Sports",
+difficulty:"Hard",
+q:"In tennis, what score comes after love when a player wins the first point?",
+a:["15","10","20","30"],
+correct:0
+},
+{
+category:"Sports",
+difficulty:"Hard",
+q:"How many points is a try worth in rugby union?",
+a:["5","3","4","6"],
+correct:0
+},
+{
+category:"Sports",
+difficulty:"Expert",
+q:"Which country won the 2022 FIFA World Cup?",
+a:["Argentina","France","Brazil","Germany"],
+correct:0
+},
+
+/* ================= MOVIES ================= */
+
+{
+category:"Movies",
+difficulty:"Easy",
+q:"Who is Captain Jack Sparrow?",
+a:["Pirates of the Caribbean character","Marvel hero","Wizard","Detective"],
+correct:0
+},
+{
+category:"Movies",
+difficulty:"Easy",
+q:"What is Batman's city called?",
+a:["Gotham City","Metropolis","Star City","Central City"],
+correct:0
+},
+{
+category:"Movies",
+difficulty:"Medium",
+q:"What is Captain America's famous shield made from in the MCU?",
+a:["Vibranium","Adamantium","Titanium","Steel"],
+correct:0
+},
+{
+category:"Movies",
+difficulty:"Medium",
+q:"What school does Harry Potter attend?",
+a:["Hogwarts","Beauxbatons","Durmstrang","Ravenclaw"],
+correct:0
+},
+{
+category:"Movies",
+difficulty:"Medium",
+q:"What is the name of the cowboy in Toy Story?",
+a:["Woody","Buzz","Andy","Rex"],
+correct:0
+},
+{
+category:"Movies",
+difficulty:"Medium",
+q:"What is the name of the planet in Avatar?",
+a:["Pandora","Arrakis","Krypton","Vulcan"],
+correct:0
+},
+{
+category:"Movies",
+difficulty:"Hard",
+q:"What is Neo's real name in The Matrix?",
+a:["Thomas Anderson","John Wick","Thomas Wayne","Peter Anderson"],
+correct:0
+},
+{
+category:"Movies",
+difficulty:"Hard",
+q:"What is Optimus Prime?",
+a:["Autobot","Decepticon","Human","Alien"],
+correct:0
+},
+{
+category:"Movies",
+difficulty:"Hard",
+q:"Which movie features the quote 'Why so serious?'",
+a:["The Dark Knight","Joker","Batman Begins","The Batman"],
+correct:0
+},
+{
+category:"Movies",
+difficulty:"Expert",
+q:"Which ship is central to the movie Titanic?",
+a:["RMS Titanic","RMS Olympic","SS Britannic","Queen Mary"],
+correct:0
+},
+
+/* ================= TECHNOLOGY ================= */
+
+{
+category:"Technology",
+difficulty:"Easy",
+q:"What does CPU stand for?",
+a:["Central Processing Unit","Computer Power Unit","Central Program Utility","Core Processing Utility"],
+correct:0
+},
+{
+category:"Technology",
+difficulty:"Easy",
+q:"What does RAM help a computer with?",
+a:["Temporary memory","Permanent storage","Internet speed","Screen resolution"],
+correct:0
+},
+{
+category:"Technology",
+difficulty:"Medium",
+q:"What does USB stand for?",
+a:["Universal Serial Bus","Universal System Board","User Storage Base","Ultra Speed Bus"],
+correct:0
+},
+{
+category:"Technology",
+difficulty:"Medium",
+q:"Which company develops Android?",
+a:["Google","Apple","Microsoft","Samsung"],
+correct:0
+},
+{
+category:"Technology",
+difficulty:"Medium",
+q:"What is HTML mainly used to create?",
+a:["Web page structure","Computer viruses","Graphics cards","Operating systems"],
+correct:0
+},
+{
+category:"Technology",
+difficulty:"Medium",
+q:"What does IP stand for in networking?",
+a:["Internet Protocol","Internal Program","Internet Program","Information Port"],
+correct:0
+},
+{
+category:"Technology",
+difficulty:"Hard",
+q:"What does GPU stand for?",
+a:["Graphics Processing Unit","General Processing Utility","Graphics Program Unit","Game Processing Unit"],
+correct:0
+},
+{
+category:"Technology",
+difficulty:"Hard",
+q:"Which programming language is known for its snake logo?",
+a:["Python","Java","C++","Ruby"],
+correct:0
+},
+{
+category:"Technology",
+difficulty:"Hard",
+q:"What does CSS control on a website?",
+a:["Styling and appearance","Database storage","Server hardware","Internet connection"],
+correct:0
+},
+{
+category:"Technology",
+difficulty:"Expert",
+q:"Which protocol is commonly used to securely transfer web pages?",
+a:["HTTPS","FTP","SMTP","IRC"],
+correct:0
+},
+
+/* ================= GENERAL KNOWLEDGE ================= */
+
+{
+category:"General Knowledge",
+difficulty:"Easy",
+q:"What is the capital of France?",
+a:["Paris","Rome","Madrid","Berlin"],
+correct:0
+},
+{
+category:"General Knowledge",
+difficulty:"Easy",
+q:"How many continents are there?",
+a:["7","5","6","8"],
+correct:0
+},
+{
+category:"General Knowledge",
+difficulty:"Medium",
+q:"What is the largest ocean?",
+a:["Pacific Ocean","Atlantic Ocean","Indian Ocean","Arctic Ocean"],
+correct:0
+},
+{
+category:"General Knowledge",
+difficulty:"Medium",
+q:"The Great Pyramid of Giza is located in which country?",
+a:["Egypt","Greece","Mexico","Turkey"],
+correct:0
+},
+{
+category:"General Knowledge",
+difficulty:"Medium",
+q:"What is the fastest land animal?",
+a:["Cheetah","Lion","Horse","Leopard"],
+correct:0
+},
+{
+category:"General Knowledge",
+difficulty:"Medium",
+q:"How many days are in a leap year?",
+a:["366","365","364","367"],
+correct:0
+},
+{
+category:"General Knowledge",
+difficulty:"Hard",
+q:"What is the largest animal on Earth?",
+a:["Blue whale","African elephant","Giraffe","Whale shark"],
+correct:0
+},
+{
+category:"General Knowledge",
+difficulty:"Hard",
+q:"What is the currency of Japan?",
+a:["Yen","Won","Yuan","Dollar"],
+correct:0
+},
+{
+category:"General Knowledge",
+difficulty:"Hard",
+q:"What is the highest mountain above sea level?",
+a:["Mount Everest","K2","Kilimanjaro","Denali"],
+correct:0
+},
+{
+category:"General Knowledge",
+difficulty:"Expert",
+q:"How many time zones does Russia officially span?",
+a:["11","9","12","15"],
+correct:0
+}
+
+];
+
+/* ================= AVATARS ================= */
+
+const AVATARS = [
+"😎","😈","👽","🤖","👻","💀","😺","😸","😹","😻",
+"😼","🙀","🐶","🐱","🦊","🐼","🐸","🐵","🦁","🐯",
+"🐨","🐻","🐰","🐹","🦄","🐲","👑","🧙","🧛","🧟",
+"🥷","🤠","🤑","🤩","🥶","🥵","🤯","😴","🤪","😇",
+"👹","👺","🤡","🎃","👾","🕹️","🚀","🔥","⚡","💎"
+];
+
+/* ================= SHOP ================= */
+
+const SHOP_ITEMS = [
+{
+name:"🔥 Fire Avatar",
+emoji:"🔥",
+price:250
+},
+{
+name:"💎 Diamond Avatar",
+emoji:"💎",
+price:500
+},
+{
+name:"👑 King Avatar",
+emoji:"👑",
+price:750
+},
+{
+name:"🚀 Rocket Avatar",
+emoji:"🚀",
+price:1000
+},
+{
+name:"⚡ Lightning Avatar",
+emoji:"⚡",
+price:1250
+},
+{
+name:"👾 Gamer Avatar",
+emoji:"👾",
+price:1500
+}
+];
+
+/* ================= APP ================= */
+
+const app = {
+
+username:localStorage.getItem("qb_username") || "Player",
+avatar:localStorage.getItem("qb_avatar") || "😎",
+coins:Number(localStorage.getItem("qb_coins") || 500),
+xp:Number(localStorage.getItem("qb_xp") || 0),
+games:Number(localStorage.getItem("qb_games") || 0),
+wins:Number(localStorage.getItem("qb_wins") || 0),
+bestStreak:Number(localStorage.getItem("qb_bestStreak") || 0),
+correctTotal:Number(localStorage.getItem("qb_correct") || 0),
+
+quiz:{
+    questions:[],
+    index:0,
+    score:0,
+    correct:0,
+    streak:0,
+    bestStreak:0,
+    timer:null,
+    timeLeft:15,
+    timePerQuestion:15,
+    category:"Mixed",
+    amount:10,
+    answered:false
+},
+
+selectedAvatar:"😎",
+
+/* ---------- SAVE ---------- */
+
+save(){
+    localStorage.setItem("qb_username",this.username);
+    localStorage.setItem("qb_avatar",this.avatar);
+    localStorage.setItem("qb_coins",this.coins);
+    localStorage.setItem("qb_xp",this.xp);
+    localStorage.setItem("qb_games",this.games);
+    localStorage.setItem("qb_wins",this.wins);
+    localStorage.setItem("qb_bestStreak",this.bestStreak);
+    localStorage.setItem("qb_correct",this.correctTotal);
+},
+
+/* ---------- INIT ---------- */
+
+init(){
+
+    this.updateHeader();
+    this.updateHome();
+
+    document.getElementById("profileName").value=this.username;
+    this.selectedAvatar=this.avatar;
+
+    this.renderAvatarGrid();
+
+},
+
+/* ---------- UI ---------- */
+
+hideScreens(){
+
+    [
+        "homeScreen",
+        "quizScreen",
+        "resultsScreen",
+        "leaderboardScreen",
+        "shopScreen"
+    ].forEach(id=>{
+        document.getElementById(id).classList.add("hidden-screen");
+    });
+
+},
+
+goHome(){
+
+    this.stopTimer();
+    this.closeModals();
+    this.hideScreens();
+
+    document.getElementById("homeScreen").classList.remove("hidden-screen");
+
+    this.updateHeader();
+    this.updateHome();
+
+},
+
+updateHeader(){
+
+    document.getElementById("headerCoins").textContent=this.coins;
+    document.getElementById("headerAvatar").textContent=this.avatar;
+    document.getElementById("headerName").textContent=this.username;
+
+    const level=this.getLevel();
+
+    document.getElementById("headerLevel").textContent=
+        "Level "+level;
+
+},
+
+updateHome(){
+
+    document.getElementById("homeStreak").textContent=
+        this.quiz.streak || 0;
+
+    document.getElementById("homeGames").textContent=this.games;
+    document.getElementById("homeWins").textContent=this.wins;
+    document.getElementById("homeBest").textContent=this.bestStreak;
+
+    const fire=document.getElementById("homeFire");
+
+    if(this.bestStreak>=20){
+        fire.textContent="🔥🔥🔥";
+    }
+    else if(this.bestStreak>=10){
+        fire.textContent="🔥🔥";
+    }
+    else if(this.bestStreak>=5){
+        fire.textContent="🔥";
+    }
+    else{
+        fire.textContent="🔥";
+    }
+},
+
+/* ---------- LEVEL ---------- */
+
+getLevel(){
+
+    return Math.floor(this.xp/1000)+1;
+
+},
+
+/* ---------- MODALS ---------- */
+
+closeModals(){
+
+    document.querySelectorAll(".modal").forEach(m=>{
+        m.classList.add("hidden-screen");
+    });
+
+},
+
+openQuickPlay(){
+
+    this.closeModals();
+
+    document.getElementById("quickPlayModal")
+        .classList.remove("hidden-screen");
+
+},
+
+openCreateRoom(){
+
+    this.closeModals();
+
+    document.getElementById("createRoomModal")
+        .classList.remove("hidden-screen");
+
+},
+
+/* ---------- QUICK PLAY ---------- */
+
+startFromQuickPlay(){
+
+    const category=
+        document.getElementById("quickCategory").value;
+
+    const amount=
+        Number(document.getElementById("quickQuestions").value);
+
+    const timer=
+        Number(document.getElementById("quickTimer").value);
+
+    this.closeModals();
+
+    this.startQuiz(category,amount,timer);
+
+},
+
+/* ---------- CREATE ROOM ---------- */
+
+createRoom(){
+
+    const name=
+        document.getElementById("roomName").value || "Quiz Room";
+
+    const category=
+        document.getElementById("roomCategory").value;
+
+    const amount=
+        Number(document.getElementById("roomQuestions").value);
+
+    const timer=
+        Number(document.getElementById("roomTimer").value);
+
+    this.closeModals();
+
+    alert(
+        "Room created!\n\n"+
+        "Room: "+name+
+        "\nQuestions: "+amount+
+        "\nCategory: "+category+
+        "\n\nFor this single-file version, the room starts locally."
+    );
+
+    this.startQuiz(category,amount,timer);
+
+},
+
+/* ---------- QUESTION BUILDING ---------- */
+
+shuffle(array){
+
+    const copy=[...array];
+
+    for(let i=copy.length-1;i>0;i--){
+
+        const j=Math.floor(Math.random()*(i+1));
+
+        [copy[i],copy[j]]=
+        [copy[j],copy[i]];
+
+    }
+
+    return copy;
+},
+
+buildProgressiveQuestions(pool,amount){
+
+    const difficulties=[
+        "Easy",
+        "Medium",
+        "Hard",
+        "Expert"
+    ];
+
+    const groups={};
+
+    difficulties.forEach(d=>{
+        groups[d]=this.shuffle(
+            pool.filter(q=>q.difficulty===d)
+        );
+    });
+
+    let easy=Math.round(amount*.20);
+    let medium=Math.round(amount*.40);
+    let hard=Math.round(amount*.30);
+    let expert=amount-easy-medium-hard;
+
+    const targets={
+        Easy:easy,
+        Medium:medium,
+        Hard:hard,
+        Expert:expert
+    };
+
+    let selected=[];
+
+    difficulties.forEach(d=>{
+
+        const take=Math.min(
+            targets[d],
+            groups[d].length
+        );
+
+        selected.push(
+            ...groups[d].slice(0,take)
+        );
+
+    });
+
+    /* Fill missing questions if a category doesn't
+       contain enough questions for the requested amount. */
+
+    if(selected.length<amount){
+
+        const used=new Set(selected);
+
+        const remaining=this.shuffle(
+            pool.filter(q=>!used.has(q))
+        );
+
+        selected.push(
+            ...remaining.slice(
+                0,
+                amount-selected.length
+            )
+        );
+
+    }
+
+    /* Keep difficulty progression while randomizing
+       questions inside each difficulty. */
+
+    const final=[];
+
+    difficulties.forEach(d=>{
+
+        final.push(
+            ...this.shuffle(
+                selected.filter(q=>q.difficulty===d)
+            )
+        );
+
+    });
+
+    return final.slice(0,amount);
+
+},
+
+/* ---------- START QUIZ ---------- */
+
+startQuiz(category,amount,timer){
+
+    this.stopTimer();
+
+    let pool;
+
+    if(category==="Mixed"){
+
+        pool=[...QUESTIONS];
+
+    }
+    else{
+
+        const preferred=
+            QUESTIONS.filter(
+                q=>q.category===category
+            );
+
+        /*
+        Each category has 10 questions.
+        If the player asks for more than 10,
+        the remaining questions come from the
+        other categories so 20-70 always works.
+        */
+
+        if(preferred.length<amount){
+
+            const others=
+                QUESTIONS.filter(
+                    q=>q.category!==category
+                );
+
+            pool=[
+                ...preferred,
+                ...this.shuffle(others)
+            ];
+
+        }
+        else{
+
+            pool=preferred;
+
+        }
+
+    }
+
+    this.quiz.questions=
+        this.buildProgressiveQuestions(
+            pool,
+            Math.min(amount,QUESTIONS.length)
+        );
+
+    this.quiz.index=0;
+    this.quiz.score=0;
+    this.quiz.correct=0;
+    this.quiz.streak=0;
+    this.quiz.bestStreak=0;
+    this.quiz.category=category;
+    this.quiz.amount=this.quiz.questions.length;
+    this.quiz.timePerQuestion=timer;
+    this.quiz.answered=false;
+
+    this.hideScreens();
+
+    document.getElementById("quizScreen")
+        .classList.remove("hidden-screen");
+
+    this.showQuestion();
+
+},
+
+/* ---------- SHOW QUESTION ---------- */
+
+showQuestion(){
+
+    this.quiz.answered=false;
+
+    const q=
+        this.quiz.questions[
+            this.quiz.index
+        ];
+
+    if(!q){
+
+        this.finishQuiz();
+        return;
+
+    }
+
+    const number=this.quiz.index+1;
+    const total=this.quiz.questions.length;
+
+    document.getElementById("quizCategory")
+        .textContent=q.category;
+
+    document.getElementById("quizProgressText")
+        .textContent=
+        `Question ${number} of ${total}`;
+
+    document.getElementById("quizProgress")
+        .style.width=
+        `${(number/total)*100}%`;
+
+    document.getElementById("questionText")
+        .textContent=q.q;
+
+    const badge=
+        document.getElementById("difficultyBadge");
+
+    badge.textContent=
+        q.difficulty.toUpperCase();
+
+    badge.className=
+        "px-3 py-1 rounded-full text-xs font-bold";
+
+    if(q.difficulty==="Easy"){
+
+        badge.classList.add(
+            "bg-green-500/10",
+            "text-green-400"
+        );
+
+    }
+    else if(q.difficulty==="Medium"){
+
+        badge.classList.add(
+            "bg-yellow-500/10",
+            "text-yellow-400"
+        );
+
+    }
+    else if(q.difficulty==="Hard"){
+
+        badge.classList.add(
+            "bg-orange-500/10",
+            "text-orange-400"
+        );
+
+    }
+    else{
+
+        badge.classList.add(
+            "bg-red-500/10",
+            "text-red-400"
+        );
+
+    }
+
+    let points=100;
+
+    if(q.difficulty==="Medium") points=150;
+    if(q.difficulty==="Hard") points=200;
+    if(q.difficulty==="Expert") points=300;
+
+    document.getElementById("pointsDisplay")
+        .textContent=`+${points}`;
+
+    const answers=
+        document.getElementById("answers");
+
+    answers.innerHTML="";
+
+    const letters=["A","B","C","D"];
+
+    q.a.forEach((answer,index)=>{
+
+        const button=
+            document.createElement("button");
+
+        button.className="answer";
+
+        button.innerHTML=`
+            <div class="flex items-center">
+                <div class="option-letter">
+                    ${letters[index]}
+                </div>
+                <span>${this.escapeHTML(answer)}</span>
+            </div>
+        `;
+
+        button.onclick=()=>{
+            this.answer(index,button);
+        };
+
+        answers.appendChild(button);
+
+    });
+
+    this.startTimer();
+
+    this.updateStreakUI();
+
+},
+
+escapeHTML(text){
+
+    return text
+        .replace(/&/g,"&amp;")
+        .replace(/</g,"&lt;")
+        .replace(/>/g,"&gt;")
+        .replace(/"/g,"&quot;")
+        .replace(/'/g,"&#039;");
+
+},
+
+/* ---------- TIMER ---------- */
+
+startTimer(){
+
+    this.stopTimer();
+
+    this.quiz.timeLeft=
+        this.quiz.timePerQuestion;
+
+    this.updateTimerUI();
+
+    this.quiz.timer=
+        setInterval(()=>{
+
+            this.quiz.timeLeft--;
+
+            this.updateTimerUI();
+
+            if(this.quiz.timeLeft<=0){
+
+                this.stopTimer();
+
+                if(!this.quiz.answered){
+
+                    this.timeOut();
+
+                }
+
+            }
+
+        },1000);
+
+},
+
+stopTimer(){
+
+    if(this.quiz.timer){
+
+        clearInterval(this.quiz.timer);
+        this.quiz.timer=null;
+
+    }
+
+},
+
+updateTimerUI(){
+
+    const display=
+        document.getElementById("timerDisplay");
+
+    const value=
+        document.getElementById("timerValue");
+
+    value.textContent=
+        this.quiz.timeLeft;
+
+    if(this.quiz.timeLeft<=3){
+
+        display.classList.add("timer-danger");
+
+    }
+    else{
+
+        display.classList.remove("timer-danger");
+
+    }
+
+},
+
+/* ---------- ANSWER ---------- */
+
+answer(index,button){
+
+    if(this.quiz.answered) return;
+
+    this.quiz.answered=true;
+
+    this.stopTimer();
+
+    const q=
+        this.quiz.questions[
+            this.quiz.index
+        ];
+
+    const buttons=
+        document.querySelectorAll(".answer");
+
+    buttons.forEach(b=>{
+        b.classList.add("disabled");
+    });
+
+    if(index===q.correct){
+
+        button.classList.add("correct");
+
+        this.correctAnswer(q);
+
+    }
+    else{
+
+        button.classList.add("wrong");
+
+        if(buttons[q.correct]){
+            buttons[q.correct]
+                .classList.add("correct");
+        }
+
+        this.wrongAnswer();
+
+    }
+
+    setTimeout(()=>{
+
+        this.quiz.index++;
+
+        this.showQuestion();
+
+    },900);
+
+},
+
+timeOut(){
+
+    this.quiz.answered=true;
+
+    const q=
+        this.quiz.questions[
+            this.quiz.index
+        ];
+
+    const buttons=
+        document.querySelectorAll(".answer");
+
+    buttons.forEach(b=>{
+        b.classList.add("disabled");
+    });
+
+    if(buttons[q.correct]){
+        buttons[q.correct]
+            .classList.add("correct");
+    }
+
+    this.wrongAnswer();
+
+    setTimeout(()=>{
+
+        this.quiz.index++;
+
+        this.showQuestion();
+
+    },900);
+
+},
+
+/* ---------- CORRECT ---------- */
+
+correctAnswer(q){
+
+    this.quiz.correct++;
+
+    this.quiz.streak++;
+
+    this.correctTotal++;
+
+    if(this.quiz.streak>
+        this.quiz.bestStreak){
+
+        this.quiz.bestStreak=
+            this.quiz.streak;
+
+    }
+
+    if(this.quiz.streak>
+        this.bestStreak){
+
+        this.bestStreak=
+            this.quiz.streak;
+
+    }
+
+    let base=100;
+
+    if(q.difficulty==="Medium") base=150;
+    if(q.difficulty==="Hard") base=200;
+    if(q.difficulty==="Expert") base=300;
+
+    let multiplier=1;
+
+    if(this.quiz.streak>=3) multiplier=1.25;
+    if(this.quiz.streak>=5) multiplier=1.5;
+    if(this.quiz.streak>=7) multiplier=2;
+    if(this.quiz.streak>=10) multiplier=2.5;
+    if(this.quiz.streak>=15) multiplier=3;
+    if(this.quiz.streak>=20) multiplier=4;
+
+    const gained=
+        Math.round(base*multiplier);
+
+    this.quiz.score+=gained;
+
+    this.coins+=
+        5+
+        Math.min(
+            this.quiz.streak,
+            20
+        );
+
+    this.xp+=
+        10+
+        Math.min(
+            this.quiz.streak*2,
+            50
+        );
+
+    this.updateStreakUI();
+
+    this.triggerStreakEffect(
+        this.quiz.streak
+    );
+
+},
+
+/* ---------- WRONG ---------- */
+
+wrongAnswer(){
+
+    this.quiz.streak=0;
+
+    this.updateStreakUI();
+
+    document.body.classList.add("shake");
+
+    setTimeout(()=>{
+        document.body.classList.remove("shake");
+    },500);
+
+},
+
+/* ---------- STREAK UI ---------- */
+
+updateStreakUI(){
+
+    document.getElementById("streakValue")
+        .textContent=this.quiz.streak;
+
+    const display=
+        document.getElementById("streakDisplay");
+
+    if(this.quiz.streak>=3){
+
+        display.classList.add("streak-fire");
+
+    }
+    else{
+
+        display.classList.remove("streak-fire");
+
+    }
+
+},
+
+/* ---------- STREAK EFFECTS ---------- */
+
+triggerStreakEffect(streak){
+
+    let title="";
+    let emoji="🔥";
+    let color="#f97316";
+
+    if(streak===3){
+
+        title="3 STREAK!";
+        emoji="🔥";
+        color="#f97316";
+
+    }
+    else if(streak===5){
+
+        title="5 STREAK!";
+        emoji="🔥🔥";
+        color="#fb923c";
+
+    }
+    else if(streak===7){
+
+        title="7 STREAK!";
+        emoji="⚡🔥";
+        color="#facc15";
+
+    }
+    else if(streak===10){
+
+        title="10 STREAK!";
+        emoji="💥🔥";
+        color="#ef4444";
+
+    }
+    else if(streak===15){
+
+        title="15 STREAK!";
+        emoji="👑🔥";
+        color="#a855f7";
+
+    }
+    else if(streak===20){
+
+        title="20 STREAK!";
+        emoji="🔥🔥🔥";
+        color="#ec4899";
+
+    }
+    else if(streak>20 && streak%5===0){
+
+        title=`${streak} STREAK!`;
+        emoji="🚀🔥";
+        color="#06b6d4";
+
+    }
+    else{
+
+        return;
+
+    }
+
+    const overlay=
+        document.getElementById("effectOverlay");
+
+    const message=
+        document.createElement("div");
+
+    message.className="streak-message";
+
+    message.style.color=color;
+
+    message.innerHTML=`
+        <div style="font-size:55px">${emoji}</div>
+        <div class="streak-number">${streak}</div>
+        <div style="
+            font-size:28px;
+            font-weight:900;
+            letter-spacing:2px;
+        ">
+            ${title}
+        </div>
+    `;
+
+    overlay.appendChild(message);
+
+    setTimeout(()=>{
+        message.remove();
+    },1500);
+
+    document.body.classList.add("streak-glow");
+
+    setTimeout(()=>{
+        document.body.classList.remove("streak-glow");
+    },1000);
+
+    this.confettiForStreak(streak);
+
+},
+
+/* ---------- CONFETTI ---------- */
+
+confettiForStreak(streak){
+
+    if(typeof confetti==="undefined") return;
+
+    if(streak===3){
+
+        confetti({
+            particleCount:60,
+            spread:70,
+            origin:{y:.65}
+        });
+
+    }
+
+    else if(streak===5){
+
+        confetti({
+            particleCount:100,
+            spread:90,
+            origin:{y:.65}
+        });
+
+    }
+
+    else if(streak===7){
+
+        confetti({
+            particleCount:130,
+            spread:120,
+            origin:{y:.6}
+        });
+
+    }
+
+    else if(streak>=10){
+
+        confetti({
+            particleCount:180,
+            spread:150,
+            startVelocity:45,
+            origin:{y:.65}
+        });
+
+        setTimeout(()=>{
+
+            confetti({
+                particleCount:120,
+                spread:100,
+                origin:{x:0,y:.6}
+            });
+
+            confetti({
+                particleCount:120,
+                spread:100,
+                origin:{x:1,y:.6}
+            });
+
+        },250);
+
+    }
+
+},
+
+/* ---------- FINISH ---------- */
+
+finishQuiz(){
+
+    this.stopTimer();
+
+    this.games++;
+
+    if(
+        this.quiz.correct >=
+        Math.ceil(
+            this.quiz.questions.length*.6
+        )
+    ){
+
+        this.wins++;
+
+    }
+
+    const xpEarned=
+        Math.round(
+            this.quiz.correct*25+
+            this.quiz.bestStreak*10
+        );
+
+    this.xp+=xpEarned;
+
+    this.save();
+
+    this.hideScreens();
+
+    document.getElementById("resultsScreen")
+        .classList.remove("hidden-screen");
+
+    document.getElementById("resultScore")
+        .textContent=this.quiz.score;
+
+    document.getElementById("resultCorrect")
+        .textContent=
+        `${this.quiz.correct}/${this.quiz.questions.length}`;
+
+    document.getElementById("resultBestStreak")
+        .textContent=this.quiz.bestStreak;
+
+    document.getElementById("resultXP")
+        .textContent=`+${xpEarned}`;
+
+    let emoji="😅";
+    let title="Good try!";
+
+    const percentage=
+        this.quiz.correct/
+        this.quiz.questions.length*100;
+
+    if(percentage>=90){
+
+        emoji="👑";
+        title="QUIZ MASTER!";
+
+    }
+    else if(percentage>=75){
+
+        emoji="🔥";
+        title="Amazing!";
+
+    }
+    else if(percentage>=60){
+
+        emoji="🏆";
+        title="Great Job!";
+
+    }
+    else if(percentage>=40){
+
+        emoji="😎";
+        title="Nice Work!";
+
+    }
+
+    document.getElementById("resultEmoji")
+        .textContent=emoji;
+
+    document.getElementById("resultTitle")
+        .textContent=title;
+
+    document.getElementById("resultSubtitle")
+        .textContent=
+        `${percentage.toFixed(0)}% correct • ${this.quiz.amount} questions`;
+
+    this.updateHeader();
+
+    if(typeof confetti!="undefined"){
+
+        if(percentage>=75){
+
+            confetti({
+                particleCount:250,
+                spread:140,
+                origin:{y:.55}
+            });
+
+        }
+
+    }
+
+},
+
+/* ---------- PROFILE ---------- */
+
+openProfile(){
+
+    this.closeModals();
+
+    document.getElementById("profileName")
+        .value=this.username;
+
+    this.selectedAvatar=this.avatar;
+
+    this.renderAvatarGrid();
+
+    document.getElementById("profilePreview")
+        .textContent=this.selectedAvatar;
+
+    document.getElementById("profileModal")
+        .classList.remove("hidden-screen");
+
+},
+
+renderAvatarGrid(){
+
+    const grid=
+        document.getElementById("avatarGrid");
+
+    grid.innerHTML="";
+
+    AVATARS.forEach(avatar=>{
+
+        const item=
+            document.createElement("button");
+
+        item.className=
+            "avatar avatar-option";
+
+        if(avatar===this.selectedAvatar){
+
+            item.classList.add("selected");
+
+        }
+
+        item.textContent=avatar;
+
+        item.onclick=()=>{
+
+            this.selectedAvatar=avatar;
+
+            document.getElementById("profilePreview")
+                .textContent=avatar;
+
+            this.renderAvatarGrid();
+
+        };
+
+        grid.appendChild(item);
+
+    });
+
+},
+
+saveProfile(){
+
+    this.username=
+        document.getElementById("profileName")
+            .value.trim() || "Player";
+
+    this.avatar=this.selectedAvatar;
+
+    this.save();
+
+    this.closeModals();
+
+    this.updateHeader();
+
+    this.updateHome();
+
+},
+
+/* ---------- LEADERBOARD ---------- */
+
+showLeaderboard(){
+
+    this.closeModals();
+
+    this.hideScreens();
+
+    document.getElementById("leaderboardScreen")
+        .classList.remove("hidden-screen");
+
+    this.renderLeaderboard();
+
+},
+
+renderLeaderboard(){
+
+    const list=
+        document.getElementById("leaderboardList");
+
+    const players=[
+
+        {
+            name:"QuizKing",
+            avatar:"👑",
+            score:9820
+        },
+
+        {
+            name:"BrainStorm",
+            avatar:"🧠",
+            score:8750
+        },
+
+        {
+            name:"SpeedDemon",
+            avatar:"⚡",
+            score:8100
+        },
+
+        {
+            name:"TriviaBoss",
+            avatar:"🔥",
+            score:7650
+        },
+
+        {
+            name:this.username,
+            avatar:this.avatar,
+            score:this.quiz.score || 0
+        }
+
+    ];
+
+    players.sort(
+        (a,b)=>b.score-a.score
+    );
+
+    list.innerHTML="";
+
+    players.forEach((player,index)=>{
+
+        const row=
+            document.createElement("div");
+
+        row.className=
+            "glass card flex items-center gap-4";
+
+        row.innerHTML=`
+
+            <div class="rank">
+                ${index+1}
+            </div>
+
+            <div class="text-3xl">
+                ${player.avatar}
+            </div>
+
+            <div class="flex-1">
+                <div class="font-bold">
+                    ${this.escapeHTML(player.name)}
+                </div>
+
+                <div class="text-xs text-gray-500">
+                    Level ${Math.floor(player.score/1000)+1}
+                </div>
+            </div>
+
+            <div class="font-black text-yellow-400">
+                ${player.score.toLocaleString()}
+            </div>
+
+        `;
+
+        list.appendChild(row);
+
+    });
+
+},
+
+/* ---------- SHOP ---------- */
+
+openShop(){
+
+    this.closeModals();
+
+    this.hideScreens();
+
+    document.getElementById("shopScreen")
+        .classList.remove("hidden-screen");
+
+    this.renderShop();
+
+},
+
+renderShop(){
+
+    const grid=
+        document.getElementById("shopGrid");
+
+    grid.innerHTML="";
+
+    SHOP_ITEMS.forEach((item,index)=>{
+
+        const card=
+            document.createElement("div");
+
+        card.className=
+            "glass card shop-item";
+
+        card.innerHTML=`
+
+            <div class="text-7xl text-center mb-5">
+                ${item.emoji}
+            </div>
+
+            <div class="font-black text-lg">
+                ${item.name}
+            </div>
+
+            <div class="text-gray-500 text-sm mt-1">
+                Special avatar
+            </div>
+
+            <button
+                onclick="app.buyAvatar(${index})"
+                class="btn primary-btn w-full mt-5 py-3 rounded-xl font-bold"
+            >
+                🪙 ${item.price}
+            </button>
+
+        `;
+
+        grid.appendChild(card);
+
+    });
+
+},
+
+buyAvatar(index){
+
+    const item=SHOP_ITEMS[index];
+
+    if(this.coins<item.price){
+
+        alert("You don't have enough coins!");
+
+        return;
+
+    }
+
+    this.coins-=item.price;
+
+    this.avatar=item.emoji;
+    this.selectedAvatar=item.emoji;
+
+    this.save();
+
+    this.updateHeader();
+
+    this.renderShop();
+
+    alert(
+        `You unlocked ${item.name}!`
+    );
+
+}
+
+};
+
+app.init();
+
+</script>
+
+</body>
+</html>
